@@ -1,7 +1,7 @@
 # pyproject.toml
 
 [build-system]
-requires = ["setuptools>=61.0"] # Require a recent version of setuptools
+requires = ["setuptools>=61.0", "wheel", "daemonize"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -22,25 +22,19 @@ classifiers = [
     "Topic :: System :: Systems Administration",
 ]
 keywords = ["process", "manager", "cli", "pm2", "system", "monitoring"]
-license = { file = "LICENSE" } # If you have a LICENSE file
+license = { file = "LICENSE" }
 
 dependencies = [
     "Click",
     "psutil",
+    "daemonize"
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/pynodex" # Replace with your repo if applicable
-"Bug Tracker" = "https://github.com/yourusername/pynodex/issues" # Replace with your repo if applicable
+Homepage = "https://github.com/yourusername/pynodex"
+"Bug Tracker" = "https://github.com/yourusername/pynodex/issues"
 
 [project.scripts]
-# This defines your command-line entry point
-# 'pynodex' will execute the 'cli' function inside 'pynodex.core' module
 pynodex = "pynodex.core:cli"
-
-# Optional: Configuration for development tools
-[tool.setuptools.packages.find]
-where = ["."] # Look for packages in the current directory
-
-[tool.setuptools.package-data]
-"pynodex" = ["*.json"] # Include processes.json within the package (though it's in APP_DIR)
+# CHANGE THIS LINE
+pynodex_daemon_cli = "pynodex.daemon_cli:daemon_cli" # Now points inside the package

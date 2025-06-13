@@ -1,4 +1,4 @@
-# Pynodex: CLI Process Manager  
+# Pynodex: Process Manager  
 
 A lightweight, cross-platform process manager for monitoring and managing applications across multiple languages.  
 
@@ -17,45 +17,49 @@ pip install .
 # For development: pip install -e .
 ```
 
-## Quick Start  
+## Basic Commands  
 
-### Start an Application  
+### `pynodex start <name> "<command>" [options]`  
+Launches a new application under Pynodex management.  
+
+**Key Options:**  
+* `--cwd <path>` - Set working directory  
+* `--env KEY=VALUE` - Set environment variables  
+* `--port <num>` - Track application port  
+* `--log <path>` - Custom log file location  
+* `--no-daemon` - Run without daemon logging (logs still saved)  
+
+**Daemon-Enabled Features (Requires Daemon Process):**  
+* `--watch` - Auto-restart on file changes  
+* `--max-memory-restart <size>` - Restart if memory exceeded (e.g., "250MB")  
+* `--max-cpu-restart <percent>` - Restart if CPU usage exceeded  
+* `--restart-delay <ms>` - Delay between auto-restarts  
+* `--no-autorestart` - Disable automatic restarts  
+* `--cron <pattern>` - Schedule forced restarts  
+* `--time` - Add timestamps to logs  
+
+**Examples:**  
 ```bash
+# Python server
 pynodex start my-app "python -m http.server 8000" --port 8000
-```  
 
-### List Managed Processes  
+# Node.js app with monitoring
+pynodex start node-app "node server.js" --watch --max-memory-restart 500MB
+
+# Temporary script
+pynodex start my-task "bash script.sh" --no-daemon
+```
+
+### Other Essential Commands  
 ```bash
-pynodex list  
-```  
-
-### View Logs  
-```bash
-pynodex logs my-app  
-```  
-
-### Monitor Resources  
-```bash
-pynodex monitor  
-```  
-
-### Stop/Restart  
-```bash
-pynodex stop my-app  
-pynodex restart all  
-```  
-
-### Cleanup  
-```bash
-pynodex clear my-app  # Remove a single app  
-pynodex clear all     # Remove all apps (requires confirmation)  
-```  
-
-## Advanced (Conceptual)  
-*Supports flags for auto-restart, memory limits, and file watching—requires a daemon for full functionality.*  
+pynodex list          # View managed processes
+pynodex logs <app>    # Stream application logs
+pynodex monitor       # Show system resource usage
+pynodex stop <app>    # Stop an application
+pynodex restart all   # Restart all applications
+pynodex clear all     # Remove all apps (with confirmation)
+```
 
 ---  
-**Storage**: Data is saved in your OS application directory (e.g., `~/.local/share/pynodex`).  
-**Compatibility**: Works with any shell-executable language (Python, Node.js, Java, etc.).  
-
+**Note**: Data is stored in your OS application directory (e.g., `~/.local/share/pynodex`).  
 For detailed help: `pynodex <command> --help`
