@@ -1,0 +1,46 @@
+# pyproject.toml
+
+[build-system]
+requires = ["setuptools>=61.0"] # Require a recent version of setuptools
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pynodex"
+version = "0.1.0"
+authors = [
+  { name="Your Name", email="your.email@example.com" },
+]
+description = "A simple CLI process manager inspired by pm2."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+    "Topic :: System :: Monitoring",
+    "Topic :: System :: Systems Administration",
+]
+keywords = ["process", "manager", "cli", "pm2", "system", "monitoring"]
+license = { file = "LICENSE" } # If you have a LICENSE file
+
+dependencies = [
+    "Click",
+    "psutil",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/pynodex" # Replace with your repo if applicable
+"Bug Tracker" = "https://github.com/yourusername/pynodex/issues" # Replace with your repo if applicable
+
+[project.scripts]
+# This defines your command-line entry point
+# 'pynodex' will execute the 'cli' function inside 'pynodex.core' module
+pynodex = "pynodex.core:cli"
+
+# Optional: Configuration for development tools
+[tool.setuptools.packages.find]
+where = ["."] # Look for packages in the current directory
+
+[tool.setuptools.package-data]
+"pynodex" = ["*.json"] # Include processes.json within the package (though it's in APP_DIR)

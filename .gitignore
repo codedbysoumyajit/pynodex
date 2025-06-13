@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[co]
+*.egg-info/
+.Python
+build/
+dist/
+develop-eggs/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+.installed.cfg
+*.pth
+.mypy_cache/
+.pytest_cache/
+.hypothesis/
+.cache/
+.venv/
+venv/
+env/
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.bak
+*.swo
+
+# OS Generated Files
+.DS_Store
+.localized
+Thumbs.db
+
+# Pynodex specific data (local to user's app data directory, not in repo)
+# If you run pynodex in the project root, it might create these.
+# So it's good to ignore local instances in case they appear.
+processes.json
+process_logs/
