@@ -1,14 +1,15 @@
-# pynodex/daemon_cli.py (previously pynodex_daemon_cli.py)
+# pynodex/daemon_cli.py
 
 import os
 import sys
 import click
-from daemonize import Daemonize
+from daemonize import Daemonize # Keep this import, but we'll bypass its usage for debugging
 import subprocess
-import psutil # Ensure psutil is imported for pid_exists
-import signal # Ensure signal is imported for os.kill
+import psutil # For pid_exists
+import signal # For os.kill
+import time # For sleep in stop command
 
-# Corrected import paths
+# Ensure this import path is correct
 from pynodex.daemon import start_daemon_process, DAEMON_PID_FILE, DAEMON_LOG_FILE, DAEMON_SOCK_FILE, APP_DIR
 
 @click.group()
@@ -27,27 +28,42 @@ def start():
                 click.echo(click.style(f"Error: Pynodex daemon is already running with PID {pid}.", fg="red"), err=True)
                 sys.exit(1)
             else:
+                # Clean up stale PID file if process doesn't exist
                 click.echo(click.style(f"Warning: Old PID file found ({DAEMON_PID_FILE}) but no running process. Cleaning up.", fg="yellow"))
                 os.remove(DAEMON_PID_FILE)
+                # Also clean up stale socket file if it exists
+                if os.path.exists(DAEMON_SOCK_FILE):
+                    try:
+                        os.remove(DAEMON_SOCK_FILE)
+                    except OSError as e:
+                        click.echo(click.style(f"Warning: Could not remove old socket file {DAEMON_SOCK_FILE}: {e}", fg="yellow"), err=True)
+
         except Exception as e:
             click.echo(click.style(f"Warning: Could not read or verify PID file: {e}", fg="yellow"), err=True)
+            # Try to start anyway if pid_exists check failed
 
-    click.echo(click.style("Starting Pynodex daemon...", fg="cyan"))
-
-    # Daemonize the process
-    daemon = Daemonize(app="pynodex_daemon", pid=DAEMON_PID_FILE, action=start_daemon_process,
-                        logger=DAEMON_LOG_FILE, chdir=APP_DIR)
-    
+    # Ensure the APP_DIR exists and has correct permissions before starting daemon/logging
     try:
-        daemon.start()
-        # Note: os.getpid() here will return the PID of the *cli process* not the daemon itself,
-        # as daemonize library forks. The actual daemon PID is written to DAEMON_PID_FILE.
-        # So we should inform the user to check the PID file or status.
-        click.echo(click.style(f"Pynodex daemon initiated. Check its status with 'pynodex_daemon_cli status'.", fg="green"))
-        click.echo(click.style(f"Daemon log file: {DAEMON_LOG_FILE}", fg="blue"))
+        os.makedirs(APP_DIR, exist_ok=True)
+        os.chmod(APP_DIR, 0o755) # Set sensible permissions
     except Exception as e:
-        click.echo(click.style(f"Error starting daemon: {e}", fg="red"), err=True)
+        click.echo(click.style(f"CRITICAL ERROR: Could not create or set permissions for application directory '{APP_DIR}': {e}", fg="red", bold=True), err=True)
         sys.exit(1)
+
+
+    click.echo(click.style("Starting Pynodex daemon (!!! RUNNING IN FOREGROUND FOR DEBUGGING !!!)", fg="red", bold=True))
+
+    # --- THIS IS THE CRITICAL DEBUGGING CHANGE ---
+    # We are calling start_daemon_process() directly, bypassing Daemonize library for now.
+    try:
+        start_daemon_process() # Directly call the daemon's main function
+    except Exception as e:
+        click.echo(click.style(f"CRITICAL ERROR IN DAEMON FOREGROUND START: {e}", fg="red", bold=True), err=True)
+        # Print full traceback to stderr for debugging
+        import traceback
+        traceback.print_exc(file=sys.stderr)
+        sys.exit(1)
+    # --- END CRITICAL DEBUGGING CHANGE ---
 
 @daemon_cli.command()
 def stop():
@@ -63,25 +79,33 @@ def stop():
         if not psutil.pid_exists(pid):
             click.echo(click.style(f"Warning: Daemon PID {pid} found in file but process not running. Cleaning up PID file.", fg="yellow"))
             os.remove(DAEMON_PID_FILE)
-            if os.path.exists(DAEMON_SOCK_FILE):
-                os.remove(DAEMON_SOCK_FILE)
+            if os.path.exists(DAEMON_SOCK_FILE): # Clean up socket if daemon already died
+                try:
+                    os.remove(DAEMON_SOCK_FILE)
+                except OSError as e:
+                    click.echo(click.style(f"Warning: Could not remove old socket file {DAEMON_SOCK_FILE}: {e}", fg="yellow"), err=True)
             sys.exit(0)
 
         click.echo(click.style(f"Stopping Pynodex daemon (PID: {pid})...", fg="cyan"))
         
-        os.kill(pid, signal.SIGTERM)
+        os.kill(pid, signal.SIGTERM) # Send terminate signal
         
         max_wait = 10 # seconds
         for _ in range(max_wait):
             if not psutil.pid_exists(pid):
                 click.echo(click.style("Pynodex daemon stopped successfully.", fg="green"))
+                # Clean up PID and socket files after successful stop
                 if os.path.exists(DAEMON_PID_FILE):
                     os.remove(DAEMON_PID_FILE)
                 if os.path.exists(DAEMON_SOCK_FILE):
-                    os.remove(DAEMON_SOCK_FILE)
+                    try:
+                        os.remove(DAEMON_SOCK_FILE)
+                    except OSError as e:
+                        click.echo(click.style(f"Warning: Could not remove old socket file {DAEMON_SOCK_FILE}: {e}", fg="yellow"), err=True)
                 sys.exit(0)
-            time.sleep(1)
-        
+            time.sleep(1) # Wait for 1 second
+
+        # If loop finishes, daemon did not stop gracefully
         click.echo(click.style(f"Error: Daemon (PID {pid}) did not stop gracefully after {max_wait} seconds. You may need to kill it manually.", fg="red"), err=True)
         sys.exit(1)
 
